@@ -22,7 +22,7 @@ const initialState = {
     CPO: 0,
     total: 0
   },
-  averageMSRP: {
+  averagePrices: {
     NEW: 0,
     USED: 0,
     CPO: 0
@@ -53,10 +53,16 @@ const inventorySlice = createSlice({
         // Most recent date from data
         const mostRecentDate = sortedData.length > 0 ? sortedData[0].date : '';
         
-        // Filter data by type
-        const newVehicles = action.payload.filter(item => item.type === 'NEW');
-        const usedVehicles = action.payload.filter(item => item.type === 'USED');
-        const cpoVehicles = action.payload.filter(item => item.type === 'CPO');
+        // Filter data by condition instead of type
+        const newVehicles = action.payload.filter(item => 
+          item.condition && item.condition.toUpperCase() === 'NEW'
+        );
+        const usedVehicles = action.payload.filter(item => 
+          item.condition && item.condition.toUpperCase() === 'USED'
+        );
+        const cpoVehicles = action.payload.filter(item => 
+          item.condition && ['CPO', 'CERTIFIED'].includes(item.condition.toUpperCase())
+        );
         
         // Calculate total counts
         state.totalCounts = {
@@ -66,16 +72,21 @@ const inventorySlice = createSlice({
           total: action.payload.length
         };
         
-        // Calculate average MSRP for each type
-        state.averageMSRP = {
+        // Helper to get price safely
+        const getPrice = (item) => {
+          return parseFloat(item.price || 0);
+        };
+        
+        // Calculate average prices for each condition
+        state.averagePrices = {
           NEW: newVehicles.length > 0 
-            ? newVehicles.reduce((sum, item) => sum + parseFloat(item.msrp), 0) / newVehicles.length 
+            ? newVehicles.reduce((sum, item) => sum + getPrice(item), 0) / newVehicles.length 
             : 0,
           USED: usedVehicles.length > 0 
-            ? usedVehicles.reduce((sum, item) => sum + parseFloat(item.msrp), 0) / usedVehicles.length 
+            ? usedVehicles.reduce((sum, item) => sum + getPrice(item), 0) / usedVehicles.length 
             : 0,
           CPO: cpoVehicles.length > 0 
-            ? cpoVehicles.reduce((sum, item) => sum + parseFloat(item.msrp), 0) / cpoVehicles.length 
+            ? cpoVehicles.reduce((sum, item) => sum + getPrice(item), 0) / cpoVehicles.length 
             : 0
         };
         
@@ -83,22 +94,43 @@ const inventorySlice = createSlice({
         const dateMap = {};
         
         action.payload.forEach(item => {
-          const date = item.date.substring(0, 10); 
+          if (!item.date) {
+            console.warn("Item missing date:", item);
+            return;
+          }
+          
+          const date = typeof item.date === 'string' ? item.date.substring(0, 10) : '';
+          if (!date) {
+            console.warn("Invalid date format:", item.date);
+            return;
+          }
           
           if (!dateMap[date]) {
             dateMap[date] = {
               date,
-              NEW: { count: 0, totalMSRP: 0 },
-              USED: { count: 0, totalMSRP: 0 },
-              CPO: { count: 0, totalMSRP: 0 }
+              NEW: { count: 0, totalPrice: 0 },
+              USED: { count: 0, totalPrice: 0 },
+              CPO: { count: 0, totalPrice: 0 }
             };
           }
           
-          if (["NEW", "USED", "CPO"].includes(item.type)) {
-            dateMap[date][item.type].count += 1;
-            dateMap[date][item.type].totalMSRP += parseFloat(item.msrp);
-          } else {
-            console.error("Unexpected item type:", item.type, "for item:", item);
+          // Determine category based on condition
+          let category = 'OTHER';
+          
+          if (item.condition) {
+            const condition = item.condition.toUpperCase();
+            if (condition === 'NEW') {
+              category = 'NEW';
+            } else if (condition === 'USED') {
+              category = 'USED';
+            } else if (['CPO', 'CERTIFIED'].includes(condition)) {
+              category = 'CPO';
+            }
+          }
+          
+          if (["NEW", "USED", "CPO"].includes(category)) {
+            dateMap[date][category].count += 1;
+            dateMap[date][category].totalPrice += getPrice(item);
           }
         });
         
@@ -109,15 +141,15 @@ const inventorySlice = createSlice({
             ...entry,
             NEW: {
               ...entry.NEW,
-              avgMSRP: entry.NEW.count > 0 ? entry.NEW.totalMSRP / entry.NEW.count : 0
+              avgPrice: entry.NEW.count > 0 ? entry.NEW.totalPrice / entry.NEW.count : 0
             },
             USED: {
               ...entry.USED,
-              avgMSRP: entry.USED.count > 0 ? entry.USED.totalMSRP / entry.USED.count : 0
+              avgPrice: entry.USED.count > 0 ? entry.USED.totalPrice / entry.USED.count : 0
             },
             CPO: {
               ...entry.CPO,
-              avgMSRP: entry.CPO.count > 0 ? entry.CPO.totalMSRP / entry.CPO.count : 0
+              avgPrice: entry.CPO.count > 0 ? entry.CPO.totalPrice / entry.CPO.count : 0
             }
           }));
           
@@ -125,9 +157,9 @@ const inventorySlice = createSlice({
         state.recentData = {
           date: mostRecentDate,
           totalItems: state.totalCounts.total,
-          newTotal: newVehicles.reduce((sum, item) => sum + parseFloat(item.msrp), 0),
-          usedTotal: usedVehicles.reduce((sum, item) => sum + parseFloat(item.msrp), 0),
-          cpoTotal: cpoVehicles.reduce((sum, item) => sum + parseFloat(item.msrp), 0),
+          newTotal: newVehicles.reduce((sum, item) => sum + getPrice(item), 0),
+          usedTotal: usedVehicles.reduce((sum, item) => sum + getPrice(item), 0),
+          cpoTotal: cpoVehicles.reduce((sum, item) => sum + getPrice(item), 0),
           newItems: state.totalCounts.NEW,
           usedItems: state.totalCounts.USED,
           cpoItems: state.totalCounts.CPO
