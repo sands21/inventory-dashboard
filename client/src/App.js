@@ -1,25 +1,25 @@
-import React, { useEffect } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
-import { fetchInventory } from './features/inventory/inventorySlice';
+import React from 'react';
+import { useSelector } from 'react-redux'; 
 import Header from './components/Header/Header';
 import Dashboard from './components/Dashboard/Dashboard';
 import FilterPanel from './components/Filter/FilterPanel';
 import './App.css';
 
 function App() {
-  const dispatch = useDispatch();
-  const { filters } = useSelector(state => state.filters);
-  
-  useEffect(() => {
-    dispatch(fetchInventory(filters));
-  }, [dispatch, filters]);
+  // Get the drawer open state from Redux
+  const isFilterPanelOpen = useSelector(state => state.filters.drawerOpen);
 
   return (
     <div className="app">
       <Header />
-      <main className="main-content">
-        <Dashboard />
-        <FilterPanel />
+      {/* Add class based on filter panel state */}
+      <main className={`main-content ${isFilterPanelOpen ? 'filter-panel-open' : ''}`}>
+        <div className="dashboard-container"> {/* Wrap dashboard content */}
+          <Dashboard />
+        </div>
+        <div className="filter-panel-container"> {/* Wrap filter panel */}
+           <FilterPanel />
+        </div>
       </main>
     </div>
   );

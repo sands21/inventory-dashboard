@@ -69,3 +69,10 @@
     border-bottom-color: #ff9f40;
     font-weight: 500;
   }
+
+  .chart-container {
+    position: relative; 
+    height: 300px; 
+    width: 100%; 
+    margin-top: 20px; 
+  }

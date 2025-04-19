@@ -64,3 +64,18 @@
   .dropdown-icon {
     font-size: 10px;
   }
+
+  .filter-toggle-btn {
+    background-color: #f0f0f0; 
+    border: 1px solid #ccc;
+    padding: 5px 10px;
+    border-radius: 4px;
+    cursor: pointer;
+    margin-right: 15px; 
+    font-size: 12px;
+    font-weight: 500;
+  }
+
+  .filter-toggle-btn:hover {
+    background-color: #e0e0e0; 
+  }

@@ -1,16 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { 
-  setMakeFilter, 
-  setDurationFilter, 
+  setMakeFilter,
+  setDurationFilter,
   clearAllFilters
 } from '../../features/filters/filtersSlice';
+import { fetchInventory } from '../../features/inventory/inventorySlice';
+import { toggleFilterDrawer } from '../../features/filters/filtersSlice';
 import { MAKES, FILTER_DURATIONS } from '../../utils/constants';
 import './FilterPanel.css';
 
 const FilterPanel = () => {
   const dispatch = useDispatch();
-  const { filters } = useSelector(state => state.filters);
+  const { filters, drawerOpen } = useSelector(state => state.filters);
   
   // Create local state to store temporary filter selections
   const [tempFilters, setTempFilters] = useState({
@@ -54,18 +56,28 @@ const FilterPanel = () => {
     // Dispatch actions to update Redux state with temporary filter values
     dispatch(setMakeFilter(tempFilters.make));
     dispatch(setDurationFilter(tempFilters.duration));
+    // Dispatch fetchInventory with the newly applied filters
+    dispatch(fetchInventory(tempFilters));
   };
-  
+
   const handleClearFilters = () => {
     dispatch(clearAllFilters());
+    // Dispatch fetchInventory with empty filters to reload all data
+    dispatch(fetchInventory({ make: [], duration: null }));
   };
-  
+  const handleClosePanel = () => {
+    dispatch(toggleFilterDrawer());
+  };
+
   return (
-    <div className="filter-panel">
+    <div className={`filter-panel ${drawerOpen ? 'open' : ''}`}>
       <div className="filter-header">
         <h3>Filter Data By</h3>
+        <button className="close-panel-btn" onClick={handleClosePanel}>
+          &times; 
+        </button>
       </div>
-      
+
       <div className="filter-section">
         <h4 className="filter-title">MAKE</h4>
         {MAKES.map(make => (

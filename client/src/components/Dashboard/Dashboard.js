@@ -1,4 +1,6 @@
-import React from 'react';
+import React, { useEffect } from 'react'; 
+import { useDispatch } from 'react-redux'; 
+import { fetchInventory } from '../../features/inventory/inventorySlice'; 
 import RecentData from './RecentData';
 import InventoryCount from './InventoryCount';
 import AverageMSRP from './AverageMSRP';
@@ -6,6 +8,12 @@ import HistoryLog from './HistoryLog';
 import './Dashboard.css';
 
 const Dashboard = () => {
+  const dispatch = useDispatch();
+
+  useEffect(() => {
+    dispatch(fetchInventory({ make: [], duration: null }));
+  }, [dispatch]); 
+
   return (
     <div className="dashboard">
       <div className="dashboard-header">

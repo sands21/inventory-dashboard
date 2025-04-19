@@ -1,16 +1,65 @@
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background-color: #f8f9fa; 
+  color: #333;
+}
+
 .app {
-    max-width: 1440px;
-    margin: 0 auto;
-    padding: 0 20px;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+/* Main Content Area Layout */
+.main-content {
+  display: flex;
+  flex-grow: 1;
+  overflow: hidden; 
+  position: relative; 
+}
+
+.dashboard-container {
+  flex-grow: 1;
+  padding: 20px;
+  overflow-y: auto; 
+  transition: margin-right 0.3s ease-in-out; 
+  margin-right: 0; 
+}
+
+.filter-panel-container {
+  width: 300px; 
+  flex-shrink: 0; 
+  background-color: #ffffff; 
+  border-left: 1px solid #dee2e6; 
+  position: fixed; 
+  right: -300px; 
+  top: 0; 
+  bottom: 0; 
+  height: 100vh; 
+  padding-top: 60px; 
+  box-sizing: border-box; 
+  overflow-y: auto; 
+  transition: right 0.3s ease-in-out; 
+  z-index: 1000; 
+  box-shadow: -2px 0 5px rgba(0, 0, 0, 0.1); 
+}
+
+
+.main-content.filter-panel-open .filter-panel-container {
+  right: 0; 
+}
+
+
+@media (max-width: 768px) {
+  .filter-panel-container {
+    width: 250px; 
+    right: -250px;
+    padding-top: 50px; 
   }
-  
-  .main-content {
-    display: flex;
-    margin-top: 20px;
-  }
-  
-  @media (max-width: 992px) {
-    .main-content {
-      flex-direction: column;
-    }
-  }
+
+}

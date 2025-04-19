@@ -10,71 +10,54 @@ import {
   Tooltip,
   Legend
 } from 'chart.js';
-import { groupByMonth, formatCurrency } from '../../utils/formatters';
+import { formatCurrency } from '../../utils/formatters';
 import { VEHICLE_TYPES, CHART_COLORS } from '../../utils/constants';
 import './Dashboard.css';
 
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  Title,
+  Tooltip,
+  Legend
+);
+
 const AverageMSRP = () => {
-  const { data, averageMSRP, status } = useSelector(state => state.inventory);
-  const [activeType, setActiveType] = useState(VEHICLE_TYPES.NEW);
-  const [chartData, setChartData] = useState(null);
-  
-  useEffect(() => {
-    if (status === 'succeeded' && data.length > 0) {
-      const groupedData = groupByMonth(data);
-      const months = Object.keys(groupedData).sort((a, b) => {
-        const [aMonth, aYear] = a.split('/');
-        const [bMonth, bYear] = b.split('/');
-        
-        if (aYear !== bYear) return aYear - bYear;
-        return aMonth - bMonth;
-      });
-      
-      const calculateAvgMSRP = (month, type) => {
-        const count = groupedData[month][type];
-        if (count === 0) return 0;
-        
-        let totalMSRP = 0;
-        switch (type) {
-          case VEHICLE_TYPES.NEW:
-            totalMSRP = groupedData[month].newMSRP;
-            break;
-          case VEHICLE_TYPES.USED:
-            totalMSRP = groupedData[month].usedMSRP;
-            break;
-          case VEHICLE_TYPES.CPO:
-            totalMSRP = groupedData[month].cpoMSRP;
-            break;
-          default:
-            break;
-        }
-        
-        return totalMSRP / count;
-      };
-      
-      const chartDatasets = {
-        labels: months,
-        datasets: [
-          {
-            label: `Average MSRP (${activeType})`,
-            data: months.map(month => calculateAvgMSRP(month, activeType)),
-            backgroundColor: CHART_COLORS[activeType],
-            borderWidth: 0,
-            borderRadius: 4,
-          }
-        ]
-      };
-      
-      setChartData(chartDatasets);
-    }
-  }, [data, status, activeType]);
-  
+  // Select pre-aggregated chart data and status from state
+  const { averageMsrpChartData, status } = useSelector(state => state.inventory);
+  const [activeType, setActiveType] = useState(VEHICLE_TYPES.NEW); // Keep local state for active tab
+
   const handleTypeChange = (type) => {
     setActiveType(type);
   };
-  
+
+  // Prepare data for ChartJS based on selected type and backend data
+  let chartJsData = null;
+  if (status === 'succeeded' && averageMsrpChartData && averageMsrpChartData.labels && averageMsrpChartData.datasets) {
+    const labels = averageMsrpChartData.labels;
+    const dataset = averageMsrpChartData.datasets && averageMsrpChartData.datasets[activeType]
+      ? averageMsrpChartData.datasets[activeType]
+      : []; 
+
+    chartJsData = {
+      labels: labels,
+      datasets: [
+        {
+          label: `Average MSRP (${activeType})`,
+          data: dataset,
+          backgroundColor: CHART_COLORS[activeType],
+          borderWidth: 0,
+          borderRadius: 4,
+        }
+      ]
+    };
+  } else if (status === 'succeeded') {
+  }
+
+
   if (status === 'loading') {
-    return <div className="section">Loading...</div>;
+    return <div className="section">Loading average MSRP chart...</div>;
   }
   
   return (
@@ -103,10 +86,11 @@ const AverageMSRP = () => {
       </div>
       
       <div className="chart-container">
-        {chartData && (
-          <Chart 
-            type="bar" 
-            data={chartData}
+        {status === 'succeeded' && chartJsData ? (
+          <Chart
+            key={activeType} 
+            type="bar"
+            data={chartJsData} 
             options={{
               responsive: true,
               maintainAspectRatio: false,
@@ -117,7 +101,7 @@ const AverageMSRP = () => {
                 tooltip: {
                   callbacks: {
                     label: function(context) {
-                      return formatCurrency(context.raw);
+                      return `Avg MSRP: ${formatCurrency(context.raw !== undefined ? context.raw : 0)}`;
                     }
                   }
                 }
@@ -126,23 +110,25 @@ const AverageMSRP = () => {
                 y: {
                   beginAtZero: true,
                   grid: {
-                    color: '#f0f0f0'
+                    color: '#f0f0f0' 
                   },
                   ticks: {
                     callback: function(value) {
-                      return '$' + value.toLocaleString();
+                      return formatCurrency(value, 0); 
                     }
                   }
                 },
                 x: {
                   grid: {
-                    display: false
+                    display: false 
                   }
                 }
               }
             }}
-            height={300}
+            height={300} 
           />
+        ) : (
+           status === 'succeeded' && <div className="chart-container">No data available for the selected criteria.</div>
         )}
       </div>
     </div>
